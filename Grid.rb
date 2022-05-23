@@ -172,8 +172,8 @@ class Grid
                 puts '----------'
                 puts '/ - right mirror - reflects a laser.'
                 puts '\ - left mirror - reflects a laser.'
-                puts '@ - absorber - reduces the output of the laser. ! --> : --> . --> no-output.'
-                puts 'O - pillar - ends current laser.,'
+                puts '@ - absorber - reduces the output of the laser. ! --> : --> . --> no-output (laser ended).'
+                puts 'O - pillar - ends current laser.'
                 puts ''
 
                 exitHelp()
