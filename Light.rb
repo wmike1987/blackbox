@@ -11,14 +11,15 @@ class Light
     attr_accessor :endChar
 
 
-    def initialize(direction, position, grid)
-        @direction = direction
+    def initialize(position, direction, power, grid)
         @startingPosition = position.clone()
         @currentPosition = position.clone()
         @endingPosition = nil
-        @finished = false
+        @direction = direction
+        @power = power
         @grid = grid
-        @power = 3
+
+        @finished = false
         @startChar = '*'
         @endChar = '!'
     end

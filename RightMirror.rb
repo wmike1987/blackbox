@@ -1,12 +1,14 @@
 require './Directions'
-require './GridObject'
+require './GridTrinket'
 
-class RightMirror < GridObject
-    attr_accessor :displayChar
-
+class RightMirror < GridTrinket
     def initialize(position)
-        @displayChar = '/'
         super
+    end
+
+    def self.initializeDifficulty(difficulty)
+        @@maxNumber = 99999
+        @@minNumber = 1
     end
 
     def actUponLight(light, grid)
@@ -19,5 +21,21 @@ class RightMirror < GridObject
         elsif light.direction == Directions.WEST
             light.direction = Directions.SOUTH
         end
+    end
+
+    def self.displayChar
+        return '/'
+    end
+
+    def self.maxNumber=(val)
+        @@maxNumber = val
+    end
+
+    def self.maxNumber
+        return @@maxNumber
+    end
+
+    def self.minNumber
+        return @@minNumber
     end
 end

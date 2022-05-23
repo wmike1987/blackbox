@@ -1,15 +1,16 @@
 require './Directions'
-require './GridObject'
+require './GridTrinket'
 
-class NoopTrinket < GridObject
-    attr_accessor :displayChar
-
+class NoopTrinket < GridTrinket
     def initialize(position)
-        @displayChar = ' '
         super
     end
 
     def actUponLight(light, grid)
 
+    end
+
+    def self.displayChar
+        return ' '
     end
 end

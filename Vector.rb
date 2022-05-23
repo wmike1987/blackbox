@@ -10,4 +10,8 @@ class Vector
     def clone()
         return Vector.new(self.x, self.y)
     end
+
+    def equals(otherPosition)
+        return self.x == otherPosition.x && self.y == otherPosition.y
+    end
 end

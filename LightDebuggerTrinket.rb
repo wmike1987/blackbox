@@ -1,7 +1,7 @@
 require './Directions'
-require './GridObject'
+require './GridTrinket'
 
-class LightDebuggerTrinket < GridObject
+class LightDebuggerTrinket < GridTrinket
     attr_accessor :displayChar
 
     def initialize(position)

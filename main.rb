@@ -1,20 +1,13 @@
 require './Grid'
 
-puts 'Welcome to Blackbox... enter difficulty (1-3)'
-difficulty = gets
-gridSize = 5
+while true
+    puts 'Welcome to blackbox... enter difficulty (1-3)'
+    difficulty = gets
+    gridSize = difficulty.to_i + 2
+    trinketsAmount = (gridSize*2).floor()
 
-if difficulty.to_i == 1
-    gridSize = 3
-elsif difficulty.to_i == 2
-    gridSize = 4
-elsif difficulty.to_i == 3
-    gridSize = 5
+    myGrid = Grid.new(gridSize, difficulty)
+    myGrid.fillWithTrinkets(trinketsAmount)
+    myGrid.printGrid()
+    myGrid.getInput
 end
-
-trinketsAmount = (gridSize*2).floor()
-
-myGrid = Grid.new(gridSize)
-myGrid.fillWithTrinkets(trinketsAmount)
-myGrid.printGrid()
-myGrid.getInput

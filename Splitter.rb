@@ -1,14 +1,13 @@
 require './Directions'
 require './GridTrinket'
 
-class Absorber < GridTrinket
+class Splitter < GridTrinket
     def initialize(position)
         super
     end
 
     def self.initializeDifficulty(difficulty)
-        @@maxNumber = 3 #always 3
-        @@minNumber = 1
+        @@maxNumber = difficulty.to_i-1
     end
 
     def actUponLight(light, grid)
@@ -16,7 +15,7 @@ class Absorber < GridTrinket
     end
 
     def self.displayChar
-        return '@'
+        return '%'
     end
 
     def self.maxNumber=(val)
@@ -25,9 +24,5 @@ class Absorber < GridTrinket
 
     def self.maxNumber
         return @@maxNumber
-    end
-
-    def self.minNumber
-        return @@minNumber
     end
 end

@@ -1,8 +1,9 @@
 require './RightMirror'
 require './LeftMirror'
 require './Absorber'
+require './Pillar'
+require './Splitter'
 require './NoopTrinket'
-require './LightDebuggerTrinket'
 require './Vector'
 require './Directions'
 require './Light'
@@ -11,43 +12,60 @@ class Grid
     attr_accessor :gridSize
     attr_accessor :originalGridSize
     attr_accessor :grid
-    attr_accessor :light
-    attr_accessor :trinketList
-    attr_accessor :addedTrinkets
-    attr_accessor :absorbersAdded
+    attr_accessor :lights
+    attr_accessor :availableTrinkets
+    attr_accessor :trinketCount
 
-    def initialize(size)
+    def initialize(size, difficulty)
+        #init grid vars
+        @difficulty = difficulty
         @originalGridSize = size
         @gridSize = size + 2 #buffer for input/outputs
         @grid = Array.new(@gridSize) { Array.new(@gridSize) }
-        @trinketList = Array.new()
-        @trinketList.push(RightMirror, LeftMirror)
-        @addedTrinkets = Array.new()
-        @absorbersAdded = 0
-        @maxAbsorbers = 3
-        @fullInfo = false
+        @gridRevealed = false
+        @lights = Array.new
+
+        #create trinket list and other trinket vars
+        @availableTrinkets = Array.new()
+        @availableTrinkets.push(RightMirror, LeftMirror, Absorber, Pillar)
+        @availableTrinkets.each do |tr|
+            tr.initializeDifficulty(@difficulty)
+        end
+
+        #establish min trinkets
+        @minTrinkets = Array.new()
+        @availableTrinkets.each do |tr|
+            for i in 0...tr.minNumber
+                @minTrinkets.push(tr)
+            end
+        end
+        @trinketCount = {}
     end
 
     def addTrinket(trinket)
-        @addedTrinkets.push(trinket)
+        if @trinketCount[trinket.class.displayChar] == nil
+            @trinketCount[trinket.class.displayChar] = 1
+        else
+            @trinketCount[trinket.class.displayChar] += 1
+        end
+
         @grid[trinket.position.x][trinket.position.y] = trinket
     end
 
-    def displayTrinkets
-        trinketDict = {}
-        @addedTrinkets.each do |tr|
-            if tr.is_a?(NoopTrinket)
-                next
-            end
-            if trinketDict[tr.displayChar] == nil
-                trinketDict[tr.displayChar] = 1
-            else
-                trinketDict[tr.displayChar] += 1
-            end
-        end
+    def addLight(position, direction, power=3)
+        newLight = Light.new(position, direction, power, self)
+        @lights.push(newLight)
+    end
 
-        trinketDict.each do |key, value|
-            puts "#{key} x #{value}"
+    def clearLights
+        @lights = Array.new
+    end
+
+    def displayGoal
+        @trinketCount.each do |key, value|
+            if key != ' '
+                puts "#{key} x #{value}"
+            end
         end
     end
 
@@ -65,16 +83,27 @@ class Grid
     def fillWithTrinkets(amount)
         for i in 0...amount
             position = getEmptyGridLocation()
-            newTrinket = nil
-            if(@absorbersAdded != @maxAbsorbers)
-                newTrinket = Absorber.new(position)
-                @absorbersAdded += 1
-            else
-                newTrinket = @trinketList.sample().new(position)
+
+            loop do
+                if @minTrinkets.length > 0
+                    chosenTrinket = @minTrinkets.shift()
+                else
+                    chosenTrinket = @availableTrinkets.sample()
+                end
+                currentTrinketCount = @trinketCount[chosenTrinket.displayChar]
+                if currentTrinketCount == nil
+                    currentTrinketCount = 0
+                end
+
+                if currentTrinketCount < chosenTrinket.maxNumber
+                    addTrinket(chosenTrinket.new(position))
+                    break
+                end
             end
-            addTrinket(newTrinket)
         end
 
+        #fill other spaces with noop trinkets, this allows us to avoid
+        #doing nil checks when retreiving a trinket from a position
         for i in 0..@originalGridSize-1
             for j in 0..@originalGridSize-1
                 if @grid[i][j] == nil
@@ -88,84 +117,174 @@ class Grid
         @grid[position.x][position.y]
     end
 
-    def getInput
-        puts ''
-        puts 'Enter light position...'
-        xPos = gets.chomp()
-        parsedPosition = nil
-        lightDirection = nil
-
-        normalEntrance = xPos.length == 1
-        oppositeEntrance = xPos.length == 2
-
-        if xPos == "show"
-            @fullInfo = !@fullInfo
-            printGrid()
-            getInput()
-            return nil
-        end
-
-        if xPos == "goal"
-            displayTrinkets()
-            getInput()
-            return nil
-        end
-
-        if normalEntrance
-            if xPos.to_i > 0
-                parsedPosition = Vector.new(-1, (@originalGridSize-xPos.to_i).abs())
-                lightDirection = Directions.EAST
-            else
-                parsedPosition = Vector.new(((xPos.ord-97)), @originalGridSize)
-                lightDirection = Directions.NORTH
-            end
-        elsif oppositeEntrance
-            if xPos[0].to_i > 0
-                parsedPosition = Vector.new(@originalGridSize, (@originalGridSize-xPos[0].to_i).abs())
-                lightDirection = Directions.WEST
-            else
-                parsedPosition = Vector.new(((xPos.ord-97)).abs(), -1)
-                lightDirection = Directions.SOUTH
-            end
-        end
-
-        if parsedPosition.x > @originalGridSize + 1 || parsedPosition.x < -1
-            puts 'invalid position'
-            getInput()
-            return nil
-        end
-
-        if parsedPosition.y > @originalGridSize + 1 || parsedPosition.y < -1
-            puts 'invalid position'
-            getInput()
-            return nil
-        end
-
-        @light = Light.new(lightDirection, parsedPosition, self)
-        runLight()
+    def exitHelp
+        puts 'Press \'Enter\' to return to the blackbox...'
+        whatever = gets.chomp()
         printGrid()
         getInput()
     end
 
-    def runLight
-        loop do
-            @light.advance()
-            trinket = getTrinketAtPosition(@light.currentPosition)
+    def getInput
+        begin
+            puts ''
+            puts 'Enter laser position...'
+            xPos = gets.chomp()
+            parsedPosition = nil
+            lightDirection = nil
 
-            if trinket != nil
-                trinket.actUponLight(@light, self)
+            if xPos == 'exit'
+                return nil
             end
-            if @light.finished
+
+            normalEntrance = xPos.length == 1
+            oppositeEntrance = xPos.length == 2
+
+
+            if xPos == 'help'
+                puts ''
+                puts '-------------'
+                puts '-How to play-'
+                puts '-------------'
+                puts 'Enter a, b, 1, 2, etc to start a laser at that position.'
+                puts 'Double the position (aa, bb, 11, 22, etc) to shoot a laser from the opposite side.'
+                puts 'Type \'goal\' to show the roster of blackbox trinkets you\'re trying to guess.'
+                puts 'Type \'reveal\' to toggle the answer.'
+                puts 'Type \'exit\' to return to starting screen.'
+                puts ''
+                puts 'A star (*) indicates the starting point of the laser.'
+                puts 'The normal output of the laser is indicated by an \'!\'.'
+                puts 'However, a laser may pass through one or many absorbers (@), reducing the'
+                puts 'laser output, indicated by \':\', then \'.\', before'
+                puts 'finally losing all power and not showing any output.'
+                puts ''
+                puts '----------'
+                puts '-Trinkets-'
+                puts '----------'
+                puts '/ - right mirror - reflects a laser.'
+                puts '\ - left mirror - reflects a laser.'
+                puts '@ - absorber - reduces the output of the laser. ! --> : --> . --> no-output.'
+                puts 'O - pillar - ends current laser.,'
+                puts ''
+
+                exitHelp()
+                return nil
+            end
+
+            if xPos == "reveal"
+                @gridRevealed = !@gridRevealed
+                printGrid()
+                getInput()
+                return nil
+            end
+
+            if xPos == "goal"
+                displayGoal()
+                getInput()
+                return nil
+            end
+
+            if normalEntrance
+                if xPos.to_i > 0
+                    if xPos.to_i > @originalGridSize || xPos.to_i < 1
+                        raise "input exception"
+                    end
+                    parsedPosition = Vector.new(-1, (@originalGridSize-xPos.to_i).abs())
+                    lightDirection = Directions.EAST
+                else
+                    if xPos.ord-97+1 > @originalGridSize || xPos.ord-97+1 < 1
+                        raise "input exception"
+                    end
+                    parsedPosition = Vector.new(((xPos.ord-97)), @originalGridSize)
+                    lightDirection = Directions.NORTH
+                end
+            elsif oppositeEntrance
+                if xPos[0].to_i > 0
+                    if xPos[0].to_i > @originalGridSize || xPos[0].to_i < 1
+                        raise "input exception"
+                    end
+                    parsedPosition = Vector.new(@originalGridSize, (@originalGridSize-xPos[0].to_i).abs())
+                    lightDirection = Directions.WEST
+                else
+                    if (xPos[0].ord-97 + 1).abs() > @originalGridSize || (xPos[0].ord-97 + 1).abs() < 1
+                        raise "input exception"
+                    end
+                    parsedPosition = Vector.new(((xPos[0].ord-97)).abs(), -1)
+                    lightDirection = Directions.SOUTH
+                end
+            end
+
+            if parsedPosition.x > @originalGridSize + 1 || parsedPosition.x < -1
+                puts 'invalid position'
+                getInput()
+                return nil
+            end
+
+            if parsedPosition.y > @originalGridSize + 1 || parsedPosition.y < -1
+                puts 'invalid position'
+                getInput()
+                return nil
+            end
+
+            clearLights()
+            addLight(parsedPosition, lightDirection, 3)
+            runLights()
+            printGrid()
+            getInput()
+        rescue
+            puts 'invalid input'
+            getInput()
+        end
+    end
+
+    def runLights
+        loop do
+            @lights.each do |light|
+                light.advance()
+                trinket = getTrinketAtPosition(light.currentPosition)
+                if trinket != nil
+                    trinket.actUponLight(light, self)
+                end
+            end
+
+            canBreak = true
+            @lights.each do |light|
+                if !light.finished
+                    canBreak = false
+                end
+            end
+            if canBreak
                 break
             end
         end
     end
 
+    def aLightStartedAtPosition(position)
+        foundLight = nil
+        @lights.each do |light|
+            if light.startingPosition.equals(position)
+                foundLight = light
+            end
+        end
+
+        return foundLight
+    end
+
+    def aLightEndedAtPosition(position)
+        foundLight = nil
+        @lights.each do |light|
+            if light.endingPosition.equals(position)
+                foundLight = light
+            end
+        end
+
+        return foundLight
+    end
+
     def printGrid()
         system("clear") || system("cls")
-        withTrinkets = @fullInfo
-        leftBuffer = '   '
-        smallLeftBuffer = '  '
+        withTrinkets = @gridRevealed
+        leftBuffer = '  '
+        leftBufferLabel = '  '
         inputOutputBuffer = 2
         trinketGridSize = @originalGridSize
         fullIterationLength = (trinketGridSize * 2) + 1 + inputOutputBuffer
@@ -173,6 +292,7 @@ class Grid
             puts ''
             borderRow = i % 2 != 0
             realRow = i % 2 == 0
+            rowNumberLabel = (@originalGridSize - (i-1)/2).to_s
 
             #handle light input output
             if i == 0 || i == fullIterationLength-1
@@ -188,14 +308,14 @@ class Grid
 
                     lightCharacter = '   '
 
-                    if @light != nil
-                        if @light.startingPosition.x == realGridLocationX && @light.startingPosition.y == realGridLocationY
-                            lightCharacter = ' ' + @light.startChar + ' '
-                        end
+                    startLight = aLightStartedAtPosition(Vector.new(realGridLocationX, realGridLocationY))
+                    endLight = aLightEndedAtPosition(Vector.new(realGridLocationX, realGridLocationY))
+                    if startLight != nil
+                        lightCharacter = ' ' + startLight.startChar + ' '
+                    end
 
-                        if @light.endingPosition.x == realGridLocationX && @light.endingPosition.y == realGridLocationY
-                            lightCharacter = ' ' + @light.endChar + ' '
-                        end
+                    if endLight != nil
+                        lightCharacter = ' ' + endLight.endChar + ' '
                     end
 
                     if realCol
@@ -204,7 +324,7 @@ class Grid
                         charToPrint = ' '
                     end
                     if j == 1
-                        charToPrint = leftBuffer + charToPrint
+                        charToPrint = leftBuffer + leftBufferLabel + charToPrint
                     end
                     print charToPrint
                 end
@@ -225,7 +345,7 @@ class Grid
                     end
 
                     if j == 1
-                        charToPrint = leftBuffer + charToPrint
+                        charToPrint = leftBuffer + leftBufferLabel + charToPrint
                     end
 
                     print charToPrint
@@ -237,25 +357,37 @@ class Grid
                     realGridLocationY = (i-1)/2
                     realGridLocationX = (j-1)/2
 
-                    lightCharacter = '   '
+                    labelCharacter = ' '
+                    realRowBuffer = ' '
+                    lightCharacter = ' '
+                    compoundedLabel = '   '
+                    lightBuffer = ' '
 
-                    if @light != nil
-                        if @light.startingPosition.x == realGridLocationX && @light.startingPosition.y == realGridLocationY
-                            lightCharacter = ' ' + @light.startChar + ' '
-                        end
-
-                        if @light.endingPosition.x == realGridLocationX && @light.endingPosition.y == realGridLocationY
-                            lightCharacter = ' ' + @light.endChar + ' '
-                        end
+                    if j == 0
+                        labelCharacter = rowNumberLabel
+                    else
+                        labelCharacter = ''
                     end
+
+                    startLight = aLightStartedAtPosition(Vector.new(realGridLocationX, realGridLocationY))
+                    endLight = aLightEndedAtPosition(Vector.new(realGridLocationX, realGridLocationY))
+                    if startLight != nil
+                        lightCharacter = startLight.startChar
+                    end
+
+                    if endLight != nil
+                        lightCharacter = endLight.endChar
+                    end
+
+                    compoundedLabel = labelCharacter + realRowBuffer + lightCharacter + lightBuffer
 
                     if j == 0 || j == fullIterationLength-1
                         if j == 0
-                            charToPrint = lightCharacter
+                            charToPrint = compoundedLabel
                         end
 
                         if j == fullIterationLength-1
-                            charToPrint = lightCharacter
+                            charToPrint = compoundedLabel
                         end
                         print charToPrint
                         next
@@ -270,7 +402,7 @@ class Grid
                         trinketChar = ' '
                         trinket = @grid[realGridLocationX][realGridLocationY]
                         if trinket != nil && withTrinkets
-                            trinketChar = trinket.displayChar
+                            trinketChar = trinket.class.displayChar
                         end
                         charToPrint = ' ' + trinketChar + ' '
                     end
@@ -280,5 +412,19 @@ class Grid
             end
         end
         puts ''
+        xAxisLabel = ''
+        for j in 0...fullIterationLength
+            realCol = j % 2 == 0
+            borderCol = j % 2 != 0
+            if j == 0 || j == fullIterationLength-1
+                next
+            end
+
+            if realCol
+                labelCharacter = (((j-1)/2) + 97).chr
+                xAxisLabel += '  ' + labelCharacter + ' '
+            end
+        end
+        puts leftBuffer + leftBufferLabel + xAxisLabel
     end
 end
