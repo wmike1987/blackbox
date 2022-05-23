@@ -69,6 +69,16 @@ class Grid
         end
     end
 
+    def getGoal
+        trinketStrings = Array.new
+        @trinketCount.each do |key, value|
+            if key != ' '
+                trinketStrings.push("#{key} x #{value}")
+            end
+        end
+        return trinketStrings
+    end
+
     def getEmptyGridLocation
         x = nil
         y = nil
@@ -147,7 +157,7 @@ class Grid
                 puts '-------------'
                 puts 'Enter a, b, 1, 2, etc to start a laser at that position.'
                 puts 'Double the position (aa, bb, 11, 22, etc) to shoot a laser from the opposite side.'
-                puts 'Type \'goal\' to show the roster of blackbox trinkets you\'re trying to guess.'
+                # puts 'Type \'goal\' to show the roster of blackbox trinkets you\'re trying to guess.'
                 puts 'Type \'reveal\' to toggle the answer.'
                 puts 'Type \'exit\' to return to starting screen.'
                 puts ''
@@ -177,11 +187,11 @@ class Grid
                 return nil
             end
 
-            if xPos == "goal"
-                displayGoal()
-                getInput()
-                return nil
-            end
+            # if xPos == "goal"
+            #     displayGoal()
+            #     getInput()
+            #     return nil
+            # end
 
             if normalEntrance
                 if xPos.to_i > 0
@@ -283,6 +293,7 @@ class Grid
     def printGrid()
         system("clear") || system("cls")
         withTrinkets = @gridRevealed
+        trinketGoal = getGoal()
         leftBuffer = '  '
         leftBufferLabel = '  '
         inputOutputBuffer = 2
@@ -334,6 +345,9 @@ class Grid
             if borderRow
                 for j in 0...fullIterationLength
                     if j == 0 || j == fullIterationLength-1
+                        if j == fullIterationLength-1
+                            print '      ' + (trinketGoal.shift() || '')
+                        end
                         next
                     end
                     borderCol = j % 2 != 0
@@ -387,7 +401,7 @@ class Grid
                         end
 
                         if j == fullIterationLength-1
-                            charToPrint = compoundedLabel
+                            charToPrint = compoundedLabel + '   ' + (trinketGoal.shift() || '')
                         end
                         print charToPrint
                         next
