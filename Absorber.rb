@@ -7,12 +7,12 @@ class Absorber < GridTrinket
     end
 
     def self.initializeDifficulty(difficulty)
-        @@maxNumber = 3 #always 3
-        @@minNumber = 1
+        @@maxNumber = difficulty.to_i+1
+        @@minNumber = 2
     end
 
     def actUponLight(light, grid)
-        light.diminish()
+        light.absorberInteraction()
     end
 
     def self.displayChar

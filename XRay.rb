@@ -4,10 +4,9 @@ require './LeftMirror'
 require './Absorber'
 require './Pillar'
 
-class Light
+class XRay < Light
     attr_accessor :direction
     attr_accessor :startingPosition
-    attr_accessor :originalDirection
     attr_accessor :endingPosition
     attr_accessor :currentPosition
     attr_accessor :finished
@@ -17,20 +16,16 @@ class Light
 
 
     def initialize(position, direction, power, grid)
-        @startingPosition = position.clone()
-        @currentPosition = position.clone()
-        @endingPosition = nil
-        @originalDirection = direction
-        @direction = direction
-        @power = power
-        @grid = grid
-        @finished = false
-        initLightSpecificAttrs(position, direction, power, grid)
+        super(position, direction, power, grid)
     end
 
     def initLightSpecificAttrs(position, direction, power, grid)
-        @startChar = '*'
-        @endChar = '!'
+        @startChar = 'x'
+        @endChar = 'e'
+        @evenChar = 'e'
+        @oddChar = 'o'
+        @possibleTrinketActors = Array.new
+        @possibleTrinketActors.push(RightMirror, LeftMirror, Absorber)
     end
 
     def finish
@@ -56,21 +51,19 @@ class Light
     end
 
     def trinketCanActUponMe(trinket)
-        return true
+        result = @possibleTrinketActors.include?(trinket.class)
+        if(trinket.class == RightMirror || trinket.class == LeftMirror)
+            @possibleTrinketActors.delete(RightMirror)
+            @possibleTrinketActors.delete(LeftMirror)
+        end
+        return result
     end
 
     def absorberInteraction
-        @power -= 1
-        if @power == 0
-            finish()
-        end
-
-        if @power == 2
-            @endChar = ':'
-        end
-
-        if @power == 1
-            @endChar = '.'
+        if @endChar == 'e'
+            @endChar = 'o'
+        else
+            @endChar = 'e'
         end
     end
 end

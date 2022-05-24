@@ -7,12 +7,14 @@ require './NoopTrinket'
 require './Vector'
 require './Directions'
 require './Light'
+require './XRay'
 
 class Grid
     attr_accessor :gridSize
     attr_accessor :originalGridSize
     attr_accessor :grid
     attr_accessor :lights
+    attr_accessor :lightMode
     attr_accessor :availableTrinkets
     attr_accessor :trinketCount
 
@@ -24,6 +26,7 @@ class Grid
         @grid = Array.new(@gridSize) { Array.new(@gridSize) }
         @gridRevealed = false
         @lights = Array.new
+        @lightMode = Light
 
         #create trinket list and other trinket vars
         @availableTrinkets = Array.new()
@@ -52,8 +55,8 @@ class Grid
         @grid[trinket.position.x][trinket.position.y] = trinket
     end
 
-    def addLight(position, direction, power=3)
-        newLight = Light.new(position, direction, power, self)
+    def addLight(position, direction, power=3, lightClass)
+        newLight = lightClass.new(position, direction, power, self)
         @lights.push(newLight)
     end
 
@@ -137,7 +140,12 @@ class Grid
     def getInput
         begin
             puts ''
-            puts 'Enter laser position...'
+            if @lightMode == Light
+                puts 'Laser mode... enter position'
+            elsif @lightMode == XRay
+                puts 'X-ray mode... enter position'
+            end
+
             xPos = gets.chomp()
             parsedPosition = nil
             lightDirection = nil
@@ -146,34 +154,53 @@ class Grid
                 return nil
             end
 
+            if xPos == ''
+                if @lightMode == Light
+                    @lightMode = XRay
+                else
+                    @lightMode = Light
+                end
+                if @lights[0] != nil
+                    currentLight = @lights[0]
+                    clearLights()
+                    addLight(currentLight.startingPosition, currentLight.originalDirection, 3, @lightMode)
+                    runLights()
+                end
+                printGrid()
+                getInput()
+                return nil
+            end
+
             normalEntrance = xPos.length == 1
             oppositeEntrance = xPos.length == 2
 
-
             if xPos == 'help'
                 puts ''
-                puts '-------------'
-                puts '-How to play-'
-                puts '-------------'
+                puts '---How to play---'
                 puts 'Enter a, b, 1, 2, etc to start a laser at that position.'
                 puts 'Double the position (aa, bb, 11, 22, etc) to shoot a laser from the opposite side.'
-                # puts 'Type \'goal\' to show the roster of blackbox trinkets you\'re trying to guess.'
+                puts ''
+                puts 'A star (*) indicates the starting point of the laser (or \'x\' for an x-ray).'
+                puts 'The normal output of the laser is indicated by \'!\'.'
+                puts ''
+                puts '---Commands---'
+                puts 'Type blank \'\' to switch laser types.'
                 puts 'Type \'reveal\' to toggle the answer.'
-                puts 'Type \'exit\' to return to starting screen.'
+                puts 'Type \'exit\' to return to the starting screen.'
                 puts ''
-                puts 'A star (*) indicates the starting point of the laser.'
-                puts 'The normal output of the laser is indicated by an \'!\'.'
-                puts 'However, a laser may pass through one or many absorbers (@), reducing the'
-                puts 'laser output, indicated by \':\', then \'.\', before'
-                puts 'finally losing all power and not showing any output.'
+                puts '---Lasers---'
+                puts 'X-rays:'
+                puts '• Pass through pillars.'
+                puts '• Indicate if they encounter an even or odd amount of absorbers (e or o).'
+                puts '• Only reflect off the first mirror they encounter.'
                 puts ''
-                puts '----------'
-                puts '-Trinkets-'
-                puts '----------'
+                puts '---Trinkets---'
                 puts '/ - right mirror - reflects a laser.'
                 puts '\ - left mirror - reflects a laser.'
-                puts '@ - absorber - reduces the output of the laser. ! --> : --> . --> no-output (laser ended).'
+                puts '@ - absorber - reduces the output of the laser. \'!\' -> \':\' -> \'.\' -> no-output (laser ended).'
+                puts '             - toggles x-ray output.'
                 puts 'O - pillar - ends current laser.'
+                puts '           - no effect to x-rays.'
                 puts ''
 
                 exitHelp()
@@ -186,12 +213,6 @@ class Grid
                 getInput()
                 return nil
             end
-
-            # if xPos == "goal"
-            #     displayGoal()
-            #     getInput()
-            #     return nil
-            # end
 
             if normalEntrance
                 if xPos.to_i > 0
@@ -236,7 +257,7 @@ class Grid
             end
 
             clearLights()
-            addLight(parsedPosition, lightDirection, 3)
+            addLight(parsedPosition, lightDirection, 3, @lightMode)
             runLights()
             printGrid()
             getInput()
@@ -252,7 +273,9 @@ class Grid
                 light.advance()
                 trinket = getTrinketAtPosition(light.currentPosition)
                 if trinket != nil
-                    trinket.actUponLight(light, self)
+                    if light.trinketCanActUponMe(trinket)
+                        trinket.actUponLight(light, self)
+                    end
                 end
             end
 
