@@ -29,7 +29,7 @@ class Light
     end
 
     def initLightSpecificAttrs(position, direction, power, grid)
-        @startChar = 'w'
+        @startChar = '~'
         @endChar = '!'
     end
 

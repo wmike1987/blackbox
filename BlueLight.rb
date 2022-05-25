@@ -22,7 +22,7 @@ class BlueLight < Light
     end
 
     def initLightSpecificAttrs(position, direction, power, grid)
-        @startChar = '~'
+        @startChar = 'B'
         @endChar = ' '
         @possibleTrinketActors = Array.new
         @possibleTrinketActors.push(Absorber)
