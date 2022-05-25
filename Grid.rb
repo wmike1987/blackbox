@@ -337,6 +337,7 @@ class Grid
         system("clear") || system("cls")
         withTrinkets = @gridRevealed
         trinketGoal = getGoal()
+        leftScreenBuffer = ' '
         leftBuffer = '  '
         leftBufferLabel = '  '
         inputOutputBuffer = 2
@@ -378,7 +379,7 @@ class Grid
                         charToPrint = ' '
                     end
                     if j == 1
-                        charToPrint = leftBuffer + leftBufferLabel + charToPrint
+                        charToPrint = leftScreenBuffer + leftBuffer + leftBufferLabel + charToPrint
                     end
                     print charToPrint
                 end
@@ -402,7 +403,7 @@ class Grid
                     end
 
                     if j == 1
-                        charToPrint = leftBuffer + leftBufferLabel + charToPrint
+                        charToPrint = leftScreenBuffer + leftBuffer + leftBufferLabel + charToPrint
                     end
 
                     print charToPrint
@@ -436,15 +437,16 @@ class Grid
                         lightCharacter = endLight.endChar
                     end
 
-                    compoundedLabel = labelCharacter + realRowBuffer + lightCharacter + lightBuffer
+                    leftCompoundedLabel = leftScreenBuffer + labelCharacter + realRowBuffer + lightCharacter + lightBuffer
+                    rightCompoundedLabel = labelCharacter + realRowBuffer + lightCharacter + lightBuffer
 
                     if j == 0 || j == fullIterationLength-1
                         if j == 0
-                            charToPrint = compoundedLabel
+                            charToPrint = leftCompoundedLabel
                         end
 
                         if j == fullIterationLength-1
-                            charToPrint = compoundedLabel + '   ' + (trinketGoal.shift() || '')
+                            charToPrint = rightCompoundedLabel + '   ' + (trinketGoal.shift() || '')
                         end
                         print charToPrint
                         next
@@ -482,6 +484,6 @@ class Grid
                 xAxisLabel += '  ' + labelCharacter + ' '
             end
         end
-        puts leftBuffer + leftBufferLabel + xAxisLabel
+        puts leftScreenBuffer + leftBuffer + leftBufferLabel + xAxisLabel
     end
 end
