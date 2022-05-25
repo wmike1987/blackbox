@@ -7,7 +7,7 @@ require './NoopTrinket'
 require './Vector'
 require './Directions'
 require './Light'
-require './XRay'
+require './Sonar'
 require './BlueLight'
 
 class Grid
@@ -29,7 +29,7 @@ class Grid
         @lights = Array.new
         @lightMode = Light
         @lightTypes = Array.new()
-        @lightTypes.push(Light, XRay, BlueLight)
+        @lightTypes.push(Light, Sonar, BlueLight)
 
         #create trinket list and other trinket vars
         @availableTrinkets = Array.new()
@@ -154,8 +154,8 @@ class Grid
             puts ''
             if @lightMode == Light
                 puts 'Laser mode... enter position'
-            elsif @lightMode == XRay
-                puts 'X-ray mode... enter position'
+            elsif @lightMode == Sonar
+                puts 'Sonar mode... enter position'
             elsif @lightMode == BlueLight
                 puts 'Blue-ray mode... enter position'
             end
@@ -205,15 +205,16 @@ class Grid
                 puts '• Full power (!) cannot pass through pillars.'
                 puts '• Lesser powers, (:) and (.), can pass through pillars.'
                 puts ''
-                puts 'Blue-light: (#) -> ()'
+                puts 'Blue-light: (+) -> ()'
                 puts '• Passes through pillars.'
                 puts '• Passes through mirrors.'
-                puts '• Dies and spawns two white lasers perpendicular to current direction upon encountering an absorber.'
+                puts '• Spawns two white lasers perpendicular to current direction for every absorber it encounters.'
                 puts '• Produces no output of its own.'
                 puts ''
-                puts 'X-ray: (x) -> (e, o)'
+                puts 'Sonar: (#) -> (e, o)'
                 puts '• Passes through pillars.'
-                puts '• Indicates if it encounters an even or odd amount of absorbers (e or o).'
+                puts '• Output character indicates if it encounters an even or odd amount of absorbers (e or o).'
+                puts '• Starting character indicates difference in trinkets vs empty spaces encountered (absolute value).'
                 puts '• Reflects off only the first mirror it encounters.'
                 puts ''
                 puts '---Trinkets---'
@@ -365,7 +366,7 @@ class Grid
                     startLight = aLightStartedAtPosition(Vector.new(realGridLocationX, realGridLocationY))
                     endLight = aLightEndedAtPosition(Vector.new(realGridLocationX, realGridLocationY))
                     if startLight != nil
-                        lightCharacter = ' ' + startLight.startChar + ' '
+                        lightCharacter = ' ' + startLight.getStartChar + ' '
                     end
 
                     if endLight != nil
@@ -429,7 +430,7 @@ class Grid
                     startLight = aLightStartedAtPosition(Vector.new(realGridLocationX, realGridLocationY))
                     endLight = aLightEndedAtPosition(Vector.new(realGridLocationX, realGridLocationY))
                     if startLight != nil
-                        lightCharacter = startLight.startChar
+                        lightCharacter = startLight.getStartChar
                     end
 
                     if endLight != nil

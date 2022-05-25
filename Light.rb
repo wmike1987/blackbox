@@ -44,6 +44,10 @@ class Light
         end
     end
 
+    def getStartChar
+        return @startChar
+    end
+
     def advance
         if @finished
             return nil

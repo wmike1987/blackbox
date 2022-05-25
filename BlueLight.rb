@@ -22,7 +22,7 @@ class BlueLight < Light
     end
 
     def initLightSpecificAttrs(position, direction, power, grid)
-        @startChar = '#'
+        @startChar = '+'
         @endChar = ' '
         @possibleTrinketActors = Array.new
         @possibleTrinketActors.push(Absorber)
@@ -51,15 +51,12 @@ class BlueLight < Light
     end
 
     def trinketCanActUponMe(trinket)
-        result = @possibleTrinketActors.include?(trinket.class)
-        if(trinket.class == RightMirror || trinket.class == LeftMirror)
-            @possibleTrinketActors.delete(RightMirror)
-            @possibleTrinketActors.delete(LeftMirror)
-        end
-        return result
+        return @possibleTrinketActors.include?(trinket.class)
     end
 
     def absorberInteraction
+        # finish()
+
         direction1 = nil
         direction2 = nil
         if @direction == Directions.NORTH || @direction == Directions.SOUTH

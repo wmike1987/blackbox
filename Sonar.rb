@@ -2,9 +2,10 @@ require './Vector'
 require './RightMirror'
 require './LeftMirror'
 require './Absorber'
+require './NoopTrinket'
 require './Pillar'
 
-class XRay < Light
+class Sonar < Light
     attr_accessor :direction
     attr_accessor :startingPosition
     attr_accessor :endingPosition
@@ -26,6 +27,11 @@ class XRay < Light
         @oddChar = 'o'
         @possibleTrinketActors = Array.new
         @possibleTrinketActors.push(RightMirror, LeftMirror, Absorber)
+        @trinketTouches = 0
+    end
+
+    def getStartChar
+        return (@trinketTouches).abs().to_s
     end
 
     def finish
@@ -51,6 +57,12 @@ class XRay < Light
     end
 
     def trinketCanActUponMe(trinket)
+        if trinket.class == NoopTrinket
+            @trinketTouches -= 1
+        else
+            @trinketTouches += 1
+        end
+
         result = @possibleTrinketActors.include?(trinket.class)
         if(trinket.class == RightMirror || trinket.class == LeftMirror)
             @possibleTrinketActors.delete(RightMirror)
