@@ -195,7 +195,7 @@ class Grid
                 puts 'Type \'exit\' to return to the starting screen.'
                 puts ''
                 puts '---Lasers---'
-                puts 'White-light: (~) -> (!, :, .)'
+                puts 'White-light: (*) -> (!, :, .)'
                 puts '• Reflects off all mirrors.'
                 puts '• Loses power upon hitting an absorber.'
                 puts '  - Hitting 1 absorber produces \':\' as the output.'
