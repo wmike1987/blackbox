@@ -51,11 +51,11 @@ class BlueLight < Light
     end
 
     def trinketCanActUponMe(trinket)
-        return @possibleTrinketActors.include?(trinket.class)
+        return !@finished && @possibleTrinketActors.include?(trinket.class)
     end
 
     def absorberInteraction
-        # finish()
+        finish()
 
         direction1 = nil
         direction2 = nil

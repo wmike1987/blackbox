@@ -207,7 +207,7 @@ class Grid
                 puts 'Blue-light: (B) -> ()'
                 puts '• Passes through pillars.'
                 puts '• Passes through mirrors.'
-                puts '• Spawns two white lasers perpendicular to current direction for every absorber it encounters.'
+                puts '• Dies and spawns two white lasers perpendicular to current direction upon contacting an absorber.'
                 puts '• Produces no output of its own.'
                 puts ''
                 puts 'Sonar: (digit) -> (e, o)'
