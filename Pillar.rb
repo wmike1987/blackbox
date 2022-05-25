@@ -7,12 +7,12 @@ class Pillar < GridTrinket
     end
 
     def self.initializeDifficulty(difficulty)
-        @@maxNumber = difficulty.to_i+1
-        @@minNumber = 2
+        @@maxNumber = 1
+        @@minNumber = 1
     end
 
     def actUponLight(light, grid)
-        light.finish()
+        light.hitPillar()
     end
 
     def self.displayChar

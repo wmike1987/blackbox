@@ -8,6 +8,7 @@ require './Vector'
 require './Directions'
 require './Light'
 require './XRay'
+require './BlueLight'
 
 class Grid
     attr_accessor :gridSize
@@ -27,6 +28,8 @@ class Grid
         @gridRevealed = false
         @lights = Array.new
         @lightMode = Light
+        @lightTypes = Array.new()
+        @lightTypes.push(Light, XRay, BlueLight)
 
         #create trinket list and other trinket vars
         @availableTrinkets = Array.new()
@@ -137,6 +140,15 @@ class Grid
         getInput()
     end
 
+    def getNextLightType
+        if @lightMode == @lightTypes[-1]
+            @lightMode = @lightTypes[0]
+        else
+            currentIndex = @lightTypes.index(@lightMode)
+            @lightMode = @lightTypes[currentIndex+1]
+        end
+    end
+
     def getInput
         begin
             puts ''
@@ -144,6 +156,8 @@ class Grid
                 puts 'Laser mode... enter position'
             elsif @lightMode == XRay
                 puts 'X-ray mode... enter position'
+            elsif @lightMode == BlueLight
+                puts 'Blue-ray mode... enter position'
             end
 
             xPos = gets.chomp()
@@ -155,11 +169,7 @@ class Grid
             end
 
             if xPos == ''
-                if @lightMode == Light
-                    @lightMode = XRay
-                else
-                    @lightMode = Light
-                end
+                getNextLightType()
                 if @lights[0] != nil
                     currentLight = @lights[0]
                     clearLights()
@@ -180,27 +190,37 @@ class Grid
                 puts 'Enter a, b, 1, 2, etc to start a laser at that position.'
                 puts 'Double the position (aa, bb, 11, 22, etc) to shoot a laser from the opposite side.'
                 puts ''
-                puts 'A star (*) indicates the starting point of the laser (or \'x\' for an x-ray).'
-                puts 'The normal output of the laser is indicated by \'!\'.'
-                puts ''
                 puts '---Commands---'
                 puts 'Type blank \'\' to switch laser types.'
                 puts 'Type \'reveal\' to toggle the answer.'
                 puts 'Type \'exit\' to return to the starting screen.'
                 puts ''
                 puts '---Lasers---'
-                puts 'X-rays:'
-                puts '• Pass through pillars.'
-                puts '• Indicate if they encounter an even or odd amount of absorbers (e or o).'
-                puts '• Only reflect off the first mirror they encounter.'
+                puts 'White-light: (*) -> (!, :, .)'
+                puts '• Reflects off all mirrors.'
+                puts '• Loses power upon hitting an absorber.'
+                puts '  - Hitting 1 absorber produces \':\' as the output.'
+                puts '  - Hitting 2 absorbers produces \'.\' as the output.'
+                puts '  - Hitting 3 absorbers kills the laser. (no output)'
+                puts '• Full power (!) cannot pass through pillars.'
+                puts '• Lesser powers, (:) and (.), can pass through pillars.'
+                puts ''
+                puts 'Blue-light: (#) -> ()'
+                puts '• Passes through pillars.'
+                puts '• Passes through mirrors.'
+                puts '• Dies and spawns two white lasers perpendicular to current direction upon encountering an absorber.'
+                puts '• Produces no output of its own.'
+                puts ''
+                puts 'X-ray: (x) -> (e, o)'
+                puts '• Passes through pillars.'
+                puts '• Indicates if it encounters an even or odd amount of absorbers (e or o).'
+                puts '• Reflects off only the first mirror it encounters.'
                 puts ''
                 puts '---Trinkets---'
-                puts '/ - right mirror - reflects a laser.'
-                puts '\ - left mirror - reflects a laser.'
-                puts '@ - absorber - reduces the output of the laser. \'!\' -> \':\' -> \'.\' -> no-output (laser ended).'
-                puts '             - toggles x-ray output.'
-                puts 'O - pillar - ends current laser.'
-                puts '           - no effect to x-rays.'
+                puts '/ - right mirror'
+                puts '\ - left mirror'
+                puts '@ - absorber'
+                puts 'O - pillar'
                 puts ''
 
                 exitHelp()

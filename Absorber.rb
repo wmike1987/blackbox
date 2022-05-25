@@ -7,8 +7,8 @@ class Absorber < GridTrinket
     end
 
     def self.initializeDifficulty(difficulty)
-        @@maxNumber = difficulty.to_i+1
-        @@minNumber = 2
+        @@maxNumber = difficulty.to_i+3
+        @@minNumber = 3
     end
 
     def actUponLight(light, grid)
