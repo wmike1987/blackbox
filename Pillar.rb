@@ -7,7 +7,7 @@ class Pillar < GridTrinket
     end
 
     def self.initializeDifficulty(difficulty)
-        @@maxNumber = 1
+        @@maxNumber = difficulty.to_i + 1
         @@minNumber = 1
     end
 

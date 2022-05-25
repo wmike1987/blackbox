@@ -2,7 +2,6 @@ require './RightMirror'
 require './LeftMirror'
 require './Absorber'
 require './Pillar'
-require './Splitter'
 require './NoopTrinket'
 require './Vector'
 require './Directions'
@@ -184,19 +183,19 @@ class Grid
             normalEntrance = xPos.length == 1
             oppositeEntrance = xPos.length == 2
 
-            if xPos == 'help'
+            if xPos == 'help' || xPos == 'h'
                 puts ''
                 puts '---How to play---'
                 puts 'Enter a, b, 1, 2, etc to start a laser at that position.'
                 puts 'Double the position (aa, bb, 11, 22, etc) to shoot a laser from the opposite side.'
                 puts ''
                 puts '---Commands---'
-                puts 'Type blank \'\' to switch laser types.'
+                puts 'Press Enter \'\' to switch laser types.'
                 puts 'Type \'reveal\' to toggle the answer.'
                 puts 'Type \'exit\' to return to the starting screen.'
                 puts ''
                 puts '---Lasers---'
-                puts 'White-light: (*) -> (!, :, .)'
+                puts 'White-light: (w) -> (!, :, .)'
                 puts '• Reflects off all mirrors.'
                 puts '• Loses power upon hitting an absorber.'
                 puts '  - Hitting 1 absorber produces \':\' as the output.'
@@ -205,13 +204,13 @@ class Grid
                 puts '• Full power (!) cannot pass through pillars.'
                 puts '• Lesser powers, (:) and (.), can pass through pillars.'
                 puts ''
-                puts 'Blue-light: (+) -> ()'
+                puts 'Blue-light: (#) -> ()'
                 puts '• Passes through pillars.'
                 puts '• Passes through mirrors.'
                 puts '• Spawns two white lasers perpendicular to current direction for every absorber it encounters.'
                 puts '• Produces no output of its own.'
                 puts ''
-                puts 'Sonar: (#) -> (e, o)'
+                puts 'Sonar: (digit) -> (e, o)'
                 puts '• Passes through pillars.'
                 puts '• Output character indicates if it encounters an even or odd amount of absorbers (e or o).'
                 puts '• Starting character indicates difference in trinkets vs empty spaces encountered (absolute value).'
@@ -228,7 +227,7 @@ class Grid
                 return nil
             end
 
-            if xPos == "reveal"
+            if xPos == "reveal" || xPos == "r"
                 @gridRevealed = !@gridRevealed
                 printGrid()
                 getInput()
