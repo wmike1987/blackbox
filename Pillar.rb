@@ -16,7 +16,7 @@ class Pillar < GridTrinket
     end
 
     def self.displayChar
-        return 'O'
+        return '0'
     end
 
     def self.maxNumber=(val)

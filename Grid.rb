@@ -21,9 +21,10 @@ class Grid
     def initialize(size, difficulty)
         #init grid vars
         @difficulty = difficulty
-        @originalGridSize = size
-        @gridSize = size + 2 #buffer for input/outputs
+        @gridSize = size# + 2 #buffer for input/outputs
         @grid = Array.new(@gridSize) { Array.new(@gridSize) }
+        @placedTrinkets = Array.new(@gridSize) { Array.new(@gridSize) }
+        @successfullyPlacedCount = 0
         @gridRevealed = false
         @lights = Array.new
         @lightMode = Light
@@ -47,6 +48,10 @@ class Grid
         @trinketCount = {}
     end
 
+    def placeTrinket(char, position)
+        realTrinket = getTrinketAtPosition(position)
+    end
+
     def addTrinket(trinket)
         if @trinketCount[trinket.class.displayChar] == nil
             @trinketCount[trinket.class.displayChar] = 1
@@ -55,6 +60,18 @@ class Grid
         end
 
         @grid[trinket.position.x][trinket.position.y] = trinket
+    end
+
+    def getTotalTrinkets
+        totalAmount = 0
+        @trinketCount.each do |key, value|
+            if key == ' '
+                next
+            end
+            totalAmount += value
+        end
+
+        return totalAmount
     end
 
     def addLight(position, direction, power=3, lightClass)
@@ -88,8 +105,8 @@ class Grid
         x = nil
         y = nil
         loop do
-            x = rand(0..@originalGridSize-1)
-            y = rand(0..@originalGridSize-1)
+            x = rand(0..@gridSize-1)
+            y = rand(0..@gridSize-1)
             break if @grid[x][y] == nil
         end
         return Vector.new(x, y)
@@ -119,11 +136,14 @@ class Grid
 
         #fill other spaces with noop trinkets, this allows us to avoid
         #doing nil checks when retreiving a trinket from a position
-        for i in 0..@originalGridSize-1
-            for j in 0..@originalGridSize-1
+        for i in 0..@gridSize-1
+            for j in 0..@gridSize-1
                 if @grid[i][j] == nil
                     addTrinket(NoopTrinket.new(Vector.new(i, j)))
                 end
+
+                @placedTrinkets[i][j] = ' '
+
             end
         end
     end
@@ -152,16 +172,79 @@ class Grid
         begin
             puts ''
             if @lightMode == Light
-                puts 'Laser mode... enter position'
+                puts 'White light mode... enter position'
             elsif @lightMode == Sonar
                 puts 'Sonar mode... enter position'
             elsif @lightMode == BlueLight
-                puts 'Blue-ray mode... enter position'
+                puts 'Blue light mode... enter position'
             end
 
             xPos = gets.chomp()
             parsedPosition = nil
             lightDirection = nil
+
+            if xPos.start_with?('place')
+                placedTrinket = xPos[6]
+                placementCol = xPos[11]
+                placementRow = xPos[12]
+
+                #validate trinket input
+                trinketCharValid = false
+                @availableTrinkets.each do |trinket|
+                    if placedTrinket == trinket.displayChar
+                        trinketCharValid = true
+                    end
+                end
+
+                if !trinketCharValid
+                    puts 'invalid trinket'
+                    getInput()
+                    return nil
+                end
+
+                #validate coordinate
+                xCoordValid = true
+                parsedCol = (placementCol.ord-97).abs()
+                if parsedCol < 0 || parsedCol > @gridSize-1
+                    xCoordValid = false
+                end
+
+                yCoordValid = true
+                parsedRow = @gridSize-1-(placementRow.to_i-1)
+                if parsedRow < 0 || parsedRow > @gridSize-1
+                    yCoordValid = false
+                end
+
+                if !xCoordValid || !yCoordValid
+                    puts 'invalid coordinate'
+                    getInput()
+                    return nil
+                end
+
+                #win or lose
+                currentTrinket = getTrinketAtPosition(Vector.new(parsedCol, parsedRow))
+                if currentTrinket.class.displayChar != placedTrinket
+                    puts 'Incorrect, you lose...'
+                    getInput()
+                    return nil
+                else
+                    @placedTrinkets[parsedCol][parsedRow] = placedTrinket
+                    @successfullyPlacedCount += 1
+                end
+
+                #redraw grid
+                printGrid()
+                if @successfullyPlacedCount >= getTotalTrinkets()
+                    puts ''
+                    puts 'You solved the blackbox, congratulations.'
+                else
+                    puts ''
+                    puts 'Correct!'
+                end
+
+                getInput()
+                return nil
+            end
 
             if xPos == 'exit'
                 return nil
@@ -188,11 +271,19 @@ class Grid
                 puts '---How to play---'
                 puts 'Enter a, b, 1, 2, etc to start a laser at that position.'
                 puts 'Double the position (aa, bb, 11, 22, etc) to shoot a laser from the opposite side.'
+                puts 'Correctly guess all trinkets to win the game (using the place command, below).'
                 puts ''
                 puts '---Commands---'
                 puts 'Press Enter \'\' to switch laser types.'
                 puts 'Type \'reveal\' to toggle the answer.'
+                puts 'Type \'place @ at a3\' (for example), to guess as abosrber at coordinate a3.'
                 puts 'Type \'exit\' to return to the starting screen.'
+                puts ''
+                puts '---Trinkets---'
+                puts '/ - right mirror'
+                puts '\ - left mirror'
+                puts '@ - absorber'
+                puts '0 - pillar'
                 puts ''
                 puts '---Lasers---'
                 puts 'White-light: (*) -> (!, :, .)'
@@ -216,12 +307,6 @@ class Grid
                 puts '• Starting character indicates difference in trinkets vs empty spaces encountered (absolute value).'
                 puts '• Reflects off only the first mirror it encounters.'
                 puts ''
-                puts '---Trinkets---'
-                puts '/ - right mirror'
-                puts '\ - left mirror'
-                puts '@ - absorber'
-                puts 'O - pillar'
-                puts ''
 
                 exitHelp()
                 return nil
@@ -236,27 +321,27 @@ class Grid
 
             if normalEntrance
                 if xPos.to_i > 0
-                    if xPos.to_i > @originalGridSize || xPos.to_i < 1
+                    if xPos.to_i > @gridSize || xPos.to_i < 1
                         raise "input exception"
                     end
-                    parsedPosition = Vector.new(-1, (@originalGridSize-xPos.to_i).abs())
+                    parsedPosition = Vector.new(-1, (@gridSize-xPos.to_i).abs())
                     lightDirection = Directions.EAST
                 else
-                    if xPos.ord-97+1 > @originalGridSize || xPos.ord-97+1 < 1
+                    if xPos.ord-97+1 > @gridSize || xPos.ord-97+1 < 1
                         raise "input exception"
                     end
-                    parsedPosition = Vector.new(((xPos.ord-97)), @originalGridSize)
+                    parsedPosition = Vector.new(((xPos.ord-97)), @gridSize)
                     lightDirection = Directions.NORTH
                 end
             elsif oppositeEntrance
                 if xPos[0].to_i > 0
-                    if xPos[0].to_i > @originalGridSize || xPos[0].to_i < 1
+                    if xPos[0].to_i > @gridSize || xPos[0].to_i < 1
                         raise "input exception"
                     end
-                    parsedPosition = Vector.new(@originalGridSize, (@originalGridSize-xPos[0].to_i).abs())
+                    parsedPosition = Vector.new(@gridSize, (@gridSize-xPos[0].to_i).abs())
                     lightDirection = Directions.WEST
                 else
-                    if (xPos[0].ord-97 + 1).abs() > @originalGridSize || (xPos[0].ord-97 + 1).abs() < 1
+                    if (xPos[0].ord-97 + 1).abs() > @gridSize || (xPos[0].ord-97 + 1).abs() < 1
                         raise "input exception"
                     end
                     parsedPosition = Vector.new(((xPos[0].ord-97)).abs(), -1)
@@ -264,13 +349,13 @@ class Grid
                 end
             end
 
-            if parsedPosition.x > @originalGridSize + 1 || parsedPosition.x < -1
+            if parsedPosition.x > @gridSize + 1 || parsedPosition.x < -1
                 puts 'invalid position'
                 getInput()
                 return nil
             end
 
-            if parsedPosition.y > @originalGridSize + 1 || parsedPosition.y < -1
+            if parsedPosition.y > @gridSize + 1 || parsedPosition.y < -1
                 puts 'invalid position'
                 getInput()
                 return nil
@@ -291,6 +376,9 @@ class Grid
         loop do
             @lights.each do |light|
                 light.advance()
+                if light.finished
+                    next
+                end
                 trinket = getTrinketAtPosition(light.currentPosition)
                 if trinket != nil
                     if light.trinketCanActUponMe(trinket)
@@ -341,13 +429,13 @@ class Grid
         leftBuffer = '  '
         leftBufferLabel = '  '
         inputOutputBuffer = 2
-        trinketGridSize = @originalGridSize
+        trinketGridSize = @gridSize
         fullIterationLength = (trinketGridSize * 2) + 1 + inputOutputBuffer
         for i in 0...fullIterationLength
             puts ''
             borderRow = i % 2 != 0
             realRow = i % 2 == 0
-            rowNumberLabel = (@originalGridSize - (i-1)/2).to_s
+            rowNumberLabel = (@gridSize - (i-1)/2).to_s
 
             #handle light input output
             if i == 0 || i == fullIterationLength-1
@@ -460,6 +548,17 @@ class Grid
                         realGridLocationY = (i-1)/2
                         trinketChar = ' '
                         trinket = @grid[realGridLocationX][realGridLocationY]
+
+                        begin
+                            placedTrinket = @placedTrinkets[realGridLocationX][realGridLocationY]
+                        rescue
+                            puts '(HUH)' + realGridLocationX.to_s + ', ' + realGridLocationY.to_s
+                        end
+
+                        if placedTrinket
+                            trinketChar = placedTrinket
+                        end
+
                         if trinket != nil && withTrinkets
                             trinketChar = trinket.class.displayChar
                         end

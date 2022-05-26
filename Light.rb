@@ -56,11 +56,11 @@ class Light
         @currentPosition.x += direction.x
         @currentPosition.y += direction.y
 
-        if @currentPosition.x > @grid.originalGridSize-1 || @currentPosition.x < 0
+        if @currentPosition.x > @grid.gridSize-1 || @currentPosition.x < 0
             finish()
         end
 
-        if @currentPosition.y > @grid.originalGridSize-1 || @currentPosition.y < 0
+        if @currentPosition.y > @grid.gridSize-1 || @currentPosition.y < 0
             finish()
         end
     end
