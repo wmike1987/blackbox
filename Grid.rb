@@ -305,7 +305,7 @@ class Grid
                 puts '• Passes through pillars.'
                 puts '• Output character indicates if it encounters an even or odd amount of absorbers (e or o).'
                 puts '• Starting character indicates difference in trinkets vs empty spaces encountered (absolute value).'
-                puts '• Reflects off only the first mirror it encounters.'
+                puts '• Reflects off only the first two mirrors it encounters.'
                 puts ''
 
                 exitHelp()

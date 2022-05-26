@@ -28,6 +28,8 @@ class Sonar < Light
         @possibleTrinketActors = Array.new
         @possibleTrinketActors.push(RightMirror, LeftMirror, Absorber)
         @trinketTouches = 0
+        @mirrorTouches = 0
+        @maxMirrorTouches = 2
     end
 
     def getStartChar
@@ -65,8 +67,11 @@ class Sonar < Light
 
         result = @possibleTrinketActors.include?(trinket.class)
         if(trinket.class == RightMirror || trinket.class == LeftMirror)
-            @possibleTrinketActors.delete(RightMirror)
-            @possibleTrinketActors.delete(LeftMirror)
+            @mirrorTouches += 1
+            if @mirrorTouches == @maxMirrorTouches
+                @possibleTrinketActors.delete(RightMirror)
+                @possibleTrinketActors.delete(LeftMirror)
+            end
         end
         return result
     end
