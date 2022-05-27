@@ -31,6 +31,17 @@ class Light
     def initLightSpecificAttrs(position, direction, power, grid)
         @startChar = '*'
         @endChar = '!'
+
+        if power == 2
+            @endChar = ':'
+        end
+
+        if power == 1
+            @endChar = '.'
+        end
+
+        @encounteredMirrors = Array.new
+        @bannedMirrors = Array.new
     end
 
     def finish
@@ -41,6 +52,24 @@ class Light
     def hitPillar
         if @power == 3
             finish()
+        end
+
+        if @power == 2
+            finish()
+            direction1 = nil
+            direction2 = nil
+            if @direction == Directions.NORTH || @direction == Directions.SOUTH
+                direction1 = Directions.EAST
+                direction2 = Directions.WEST
+            else
+                direction1 = Directions.NORTH
+                direction2 = Directions.SOUTH
+            end
+
+            @grid.addLight(@currentPosition, direction1, 1, Light)
+            @grid.addLight(@currentPosition, direction2, 1, Light)
+            @grid.runLights()
+            @grid.printGrid()
         end
     end
 
@@ -66,6 +95,16 @@ class Light
     end
 
     def trinketCanActUponMe(trinket)
+        if @bannedMirrors.include?(trinket)
+            return false
+        end
+
+        if trinket.class == RightMirror || trinket.class == LeftMirror
+            if @encounteredMirrors.include?(trinket)
+                @bannedMirrors.push(trinket)
+            end
+            @encounteredMirrors.push(trinket)
+        end
         return true
     end
 

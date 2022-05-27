@@ -17,8 +17,9 @@ class Grid
     attr_accessor :lightMode
     attr_accessor :availableTrinkets
     attr_accessor :trinketCount
+    attr_accessor :seed
 
-    def initialize(size, difficulty)
+    def initialize(size, difficulty, seed=nil)
         #init grid vars
         @difficulty = difficulty
         @gridSize = size# + 2 #buffer for input/outputs
@@ -30,6 +31,8 @@ class Grid
         @lightMode = Light
         @lightTypes = Array.new()
         @lightTypes.push(Light, Sonar, BlueLight)
+        @seed = seed != nil ? seed : (difficulty.to_s + rand(500000).to_s).to_i
+        srand(@seed)
 
         #create trinket list and other trinket vars
         @availableTrinkets = Array.new()
@@ -168,7 +171,16 @@ class Grid
         end
     end
 
-    def getInput
+    def inputLoop
+        loop do
+            ret = getInput()
+            if ret == 'win'
+                break
+            end
+        end
+    end
+
+    def getInput(forcedInput=nil)
         begin
             puts ''
             if @lightMode == Light
@@ -179,14 +191,19 @@ class Grid
                 puts 'Blue light mode... enter position'
             end
 
-            xPos = gets.chomp()
+            if forcedInput != nil
+                userInput = forcedInput
+            else
+                userInput = gets.chomp()
+            end
+
             parsedPosition = nil
             lightDirection = nil
 
-            if xPos.start_with?('place')
-                placedTrinket = xPos[6]
-                placementCol = xPos[11]
-                placementRow = xPos[12]
+            if userInput.start_with?('place')
+                placedTrinket = userInput[6]
+                placementCol = userInput[11]
+                placementRow = userInput[12]
 
                 #validate trinket input
                 trinketCharValid = false
@@ -198,7 +215,6 @@ class Grid
 
                 if !trinketCharValid
                     puts 'invalid trinket'
-                    getInput()
                     return nil
                 end
 
@@ -217,7 +233,6 @@ class Grid
 
                 if !xCoordValid || !yCoordValid
                     puts 'invalid coordinate'
-                    getInput()
                     return nil
                 end
 
@@ -225,7 +240,6 @@ class Grid
                 currentTrinket = getTrinketAtPosition(Vector.new(parsedCol, parsedRow))
                 if currentTrinket.class.displayChar != placedTrinket
                     puts 'Incorrect, you lose...'
-                    getInput()
                     return nil
                 else
                     @placedTrinkets[parsedCol][parsedRow] = placedTrinket
@@ -237,20 +251,20 @@ class Grid
                 if @successfullyPlacedCount >= getTotalTrinkets()
                     puts ''
                     puts 'You solved the blackbox, congratulations.'
+                    return 'win'
                 else
                     puts ''
                     puts 'Correct!'
                 end
 
-                getInput()
                 return nil
             end
 
-            if xPos == 'exit'
+            if userInput == 'exit'
                 return nil
             end
 
-            if xPos == ''
+            if userInput == ''
                 getNextLightType()
                 if @lights[0] != nil
                     currentLight = @lights[0]
@@ -259,14 +273,13 @@ class Grid
                     runLights()
                 end
                 printGrid()
-                getInput()
                 return nil
             end
 
-            normalEntrance = xPos.length == 1
-            oppositeEntrance = xPos.length == 2
+            normalEntrance = userInput.length == 1
+            oppositeEntrance = userInput.length == 2
 
-            if xPos == 'help' || xPos == 'h'
+            if userInput == 'help' || userInput == 'h'
                 puts ''
                 puts '---How to play---'
                 puts 'Enter a, b, 1, 2, etc to start a laser at that position.'
@@ -283,81 +296,80 @@ class Grid
                 puts '/ - right mirror'
                 puts '\ - left mirror'
                 puts '@ - absorber'
-                puts '0 - pillar'
+                puts 'P - pillar'
                 puts ''
                 puts '---Lasers---'
                 puts 'White-light: (*) -> (!, :, .)'
                 puts '• Reflects off all mirrors.'
-                puts '• Loses power upon hitting an absorber.'
-                puts '  - Hitting 1 absorber produces \':\' as the output.'
-                puts '  - Hitting 2 absorbers produces \'.\' as the output.'
-                puts '  - Hitting 3 absorbers kills the laser. (no output)'
+                puts '• Can only reflect off the same mirror twice. It will pass through'
+                puts '  on subsequent encounters. Note: This is a rare case.'
+                puts '• Loses 1 power-level for every absorber encountered.'
+                puts '  - Full power (!) -> Half power (:) -> Low power (.) -> No power (no output)'
                 puts '• Full power (!) cannot pass through pillars.'
-                puts '• Lesser powers, (:) and (.), can pass through pillars.'
+                puts '• Half power (:) dies and spawns two low-power (.) lights perpendicular to current'
+                puts '  direction upon hitting a pillar.'
+                puts '• Low power (.) passes through pillars.'
                 puts ''
                 puts 'Blue-light: (B) -> ()'
-                puts '• Passes through pillars.'
-                puts '• Passes through mirrors.'
-                puts '• Dies and spawns two white lasers perpendicular to current direction upon contacting an absorber.'
+                puts '• Passes through pillars and mirrors.'
+                puts '• Dies and spawns two white lasers perpendicular to current direction upon'
+                puts '  encountering an absorber.'
                 puts '• Produces no output of its own.'
                 puts ''
                 puts 'Sonar: (digit) -> (e, o)'
                 puts '• Passes through pillars.'
                 puts '• Output character indicates if it encounters an even or odd amount of absorbers (e or o).'
                 puts '• Starting character indicates difference in trinkets vs empty spaces encountered (absolute value).'
-                puts '• Reflects off only the first two mirrors it encounters.'
+                puts '• Reflects off only the first two mirrors encountered.'
                 puts ''
 
                 exitHelp()
                 return nil
             end
 
-            if xPos == "reveal" || xPos == "r"
+            if userInput == "reveal" || userInput == "r"
                 @gridRevealed = !@gridRevealed
                 printGrid()
-                getInput()
                 return nil
             end
 
             if normalEntrance
-                if xPos.to_i > 0
-                    if xPos.to_i > @gridSize || xPos.to_i < 1
+                if userInput.to_i > 0
+                    if userInput.to_i > @gridSize || userInput.to_i < 1
                         raise "input exception"
                     end
-                    parsedPosition = Vector.new(-1, (@gridSize-xPos.to_i).abs())
+                    parsedPosition = Vector.new(-1, (@gridSize-userInput.to_i).abs())
                     lightDirection = Directions.EAST
                 else
-                    if xPos.ord-97+1 > @gridSize || xPos.ord-97+1 < 1
+                    if userInput.ord-97+1 > @gridSize || userInput.ord-97+1 < 1
                         raise "input exception"
                     end
-                    parsedPosition = Vector.new(((xPos.ord-97)), @gridSize)
+                    parsedPosition = Vector.new(((userInput.ord-97)), @gridSize)
                     lightDirection = Directions.NORTH
                 end
             elsif oppositeEntrance
-                if xPos[0].to_i > 0
-                    if xPos[0].to_i > @gridSize || xPos[0].to_i < 1
+                if userInput[0].to_i > 0
+                    if userInput[0].to_i > @gridSize || userInput[0].to_i < 1
                         raise "input exception"
                     end
-                    parsedPosition = Vector.new(@gridSize, (@gridSize-xPos[0].to_i).abs())
+                    parsedPosition = Vector.new(@gridSize, (@gridSize-userInput[0].to_i).abs())
                     lightDirection = Directions.WEST
                 else
-                    if (xPos[0].ord-97 + 1).abs() > @gridSize || (xPos[0].ord-97 + 1).abs() < 1
+                    if (userInput[0].ord-97 + 1).abs() > @gridSize || (userInput[0].ord-97 + 1).abs() < 1
                         raise "input exception"
                     end
-                    parsedPosition = Vector.new(((xPos[0].ord-97)).abs(), -1)
+                    parsedPosition = Vector.new(((userInput[0].ord-97)).abs(), -1)
                     lightDirection = Directions.SOUTH
                 end
             end
 
             if parsedPosition.x > @gridSize + 1 || parsedPosition.x < -1
                 puts 'invalid position'
-                getInput()
                 return nil
             end
 
             if parsedPosition.y > @gridSize + 1 || parsedPosition.y < -1
                 puts 'invalid position'
-                getInput()
                 return nil
             end
 
@@ -365,10 +377,10 @@ class Grid
             addLight(parsedPosition, lightDirection, 3, @lightMode)
             runLights()
             printGrid()
-            getInput()
-        rescue
+        rescue => exception
             puts 'invalid input'
-            getInput()
+            puts exception.stacktrace
+            return nil
         end
     end
 
@@ -423,6 +435,7 @@ class Grid
 
     def printGrid()
         system("clear") || system("cls")
+        puts 'puzzle id: ' + @seed.to_s
         withTrinkets = @gridRevealed
         trinketGoal = getGoal()
         leftScreenBuffer = ' '
@@ -549,11 +562,7 @@ class Grid
                         trinketChar = ' '
                         trinket = @grid[realGridLocationX][realGridLocationY]
 
-                        begin
-                            placedTrinket = @placedTrinkets[realGridLocationX][realGridLocationY]
-                        rescue
-                            puts '(HUH)' + realGridLocationX.to_s + ', ' + realGridLocationY.to_s
-                        end
+                        placedTrinket = @placedTrinkets[realGridLocationX][realGridLocationY]
 
                         if placedTrinket
                             trinketChar = placedTrinket
