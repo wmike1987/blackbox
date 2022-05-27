@@ -391,7 +391,7 @@ class Grid
             printGrid()
         rescue => exception
             puts 'invalid input'
-            puts exception.stacktrace
+            # puts exception.stacktrace
             return nil
         end
     end
