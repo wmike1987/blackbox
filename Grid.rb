@@ -25,6 +25,8 @@ class Grid
         @gridSize = size# + 2 #buffer for input/outputs
         @grid = Array.new(@gridSize) { Array.new(@gridSize) }
         @placedTrinkets = Array.new(@gridSize) { Array.new(@gridSize) }
+        @placedTrinketCount = {}
+        @strikes = 0
         @successfullyPlacedCount = 0
         @gridRevealed = false
         @lights = Array.new
@@ -49,10 +51,6 @@ class Grid
             end
         end
         @trinketCount = {}
-    end
-
-    def placeTrinket(char, position)
-        realTrinket = getTrinketAtPosition(position)
     end
 
     def addTrinket(trinket)
@@ -98,7 +96,8 @@ class Grid
         trinketStrings = Array.new
         @trinketCount.each do |key, value|
             if key != ' '
-                trinketStrings.push("#{key} x #{value}")
+                placedTrinketCount = @placedTrinketCount[key] == nil ? (value) : (value - @placedTrinketCount[key])
+                trinketStrings.push("#{key} x #{value} (" + placedTrinketCount.to_s + ' left)')
             end
         end
         return trinketStrings
@@ -184,11 +183,11 @@ class Grid
         begin
             puts ''
             if @lightMode == Light
-                puts 'White light mode... enter position'
+                puts 'White light mode...'
             elsif @lightMode == Sonar
-                puts 'Sonar mode... enter position'
+                puts 'Sonar mode...'
             elsif @lightMode == BlueLight
-                puts 'Blue light mode... enter position'
+                puts 'Blue light mode...'
             end
 
             if forcedInput != nil
@@ -239,10 +238,23 @@ class Grid
                 #win or lose
                 currentTrinket = getTrinketAtPosition(Vector.new(parsedCol, parsedRow))
                 if currentTrinket.class.displayChar != placedTrinket
-                    puts 'Incorrect, you lose...'
-                    return nil
+                    @strikes += 1
+                    if @strikes < 3
+                        puts 'Incorrect, strike' + @strikes.to_s
+                        return nil
+                    else
+                        @gridRevealed = true
+                        printGrid()
+                        puts 'Strike ' + @strikes.to_s + '. Game over...'
+                        return 'lose'
+                    end
                 else
                     @placedTrinkets[parsedCol][parsedRow] = placedTrinket
+                    if @placedTrinketCount[placedTrinket] == nil
+                        @placedTrinketCount[placedTrinket] = 1
+                    else
+                        @placedTrinketCount[placedTrinket] += 1
+                    end
                     @successfullyPlacedCount += 1
                 end
 
