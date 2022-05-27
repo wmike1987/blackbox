@@ -262,7 +262,7 @@ class Grid
                 printGrid()
                 if @successfullyPlacedCount >= getTotalTrinkets()
                     puts ''
-                    puts 'You solved the blackbox with ' + @strikes.to_s  + 'strikes, congratulations.'
+                    puts 'You solved the blackbox with ' + @strikes.to_s  + ' strikes, congratulations.'
                     return 'win'
                 else
                     puts ''
